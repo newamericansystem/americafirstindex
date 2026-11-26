@@ -7,13 +7,13 @@ Names and IDs only. Never put secrets in this file.
 | Placeholder | Value | Source |
 |---|---|---|
 | `<DOMAIN>` | `americafirstindex.us` | Custom domain bound to the legacy App Service (step 1) |
-| `<AZURE_REGION>` | `centralus` (proposed; legacy resources were in Central US) | To confirm before step 2 |
+| `<AZURE_REGION>` | `centralus` | Confirmed by human (step 1) |
 | `<SUBSCRIPTION_ID>` | `4f38ff76-0933-4cbf-9746-92570fc83a3f` ("Azure subscription 1") | `az account show` (step 1) |
 | `<TENANT_ID>` | `6594b8a2-0781-4a07-85f4-62ab8172d4d6` ("newamericansystem us", `NETORGFT20364170.onmicrosoft.com`) | `az account show` (step 1) |
 | `<GITHUB_REPO>` | `newamericansystem/americafirstindex` | `git remote` |
-| `<ADMIN_EMAILS>` | _TBD_ | Ask before step 2 |
-| `<MAIL_FROM_DOMAIN>` | _TBD_ (recommended `mail.americafirstindex.us`) | Ask before step 2 |
-| `<ORG_POSTAL_ADDRESS>` | _TBD_ | Ask before step 2 |
+| `<ADMIN_EMAILS>` | `president@newamericansystem.us`, `cscusa1776@gmail.com` | Human (step 1). The Gmail account is outside the tenant and must be invited as an Entra B2B guest before it can be assigned the Admin app role |
+| `<MAIL_FROM_DOMAIN>` | `mail.americafirstindex.us` | Human (step 1) |
+| `<ORG_POSTAL_ADDRESS>` | 5900 Balcones Dr. Suite 23684, Austin, TX 78731 US | Human (step 1) |
 | `<DNS_PROVIDER>` | GoDaddy (nameservers `ns29.domaincontrol.com`, `ns30.domaincontrol.com`) | `dig NS`, `whois` (step 1) |
 
 ## Domain
@@ -50,7 +50,8 @@ VNet `vnet-xrojjeld`.
 | Delete Cosmos DB, private endpoint, private DNS zone, VNet | Done 2026-11-26 (approved by human) |
 | App Service plan `ASP-americafirstindex-b0e7` | **Kept** — still hosts `nassite` |
 | Resource group `americafirstindex` | **Kept** — still contains the plan |
-| Delete `AZUREAPPSERVICE_*` GitHub secrets | See "GitHub secrets" below |
+| Delete `AZUREAPPSERVICE_*` GitHub secrets | Done 2026-11-26 (`VITE_CONGRESS_API_KEY` kept until step 4) |
+| Merge step 1 ([PR #1](https://github.com/newamericansystem/americafirstindex/pull/1)) | Done 2026-11-26 |
 
 ## DNS records for `americafirstindex.us` (public lookup, 2026-11-26)
 
