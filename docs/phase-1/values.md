@@ -62,10 +62,10 @@ deploy completed with no changes. `session-secret` exists in both Key Vaults.
 
 | Item | Status |
 |---|---|
-| Install Docker Desktop (local Postgres/Azurite/Mailpit and Testcontainers tests) | Open — not installed |
-| Use Node 24 locally to match `.nvmrc` and Azure (machine has Node 26) | Open |
-| Export the GoDaddy DNS zone as a backup before step 3 changes records | Open |
-| Confirm domain auto-renew (registration expires 2027-01-10) | Open |
+| Install Docker Desktop (local Postgres/Azurite/Mailpit and Testcontainers tests) | Done (Docker Desktop 4.100) |
+| Use Node 24 locally to match `.nvmrc` and Azure (machine has Node 26) | Done (nvm default 24.22.3) |
+| Export the GoDaddy DNS zone as a backup before step 3 changes records | Done 2026-11-26 (kept outside the repo) |
+| Confirm domain auto-renew (registration expires 2027-01-10) | Done (auto-renew on) |
 
 ### Deferred items
 
@@ -94,7 +94,7 @@ To use another region, open a support request with issue type "Service and subsc
 
 ## Domain
 
-- Registrar: GoDaddy.com, LLC. Created 2026-01-10. **Registration expires 2027-01-10** — confirm auto-renew is on.
+- Registrar: GoDaddy.com, LLC. Created 2026-01-10. Registration expires 2027-01-10; auto-renew is on.
 - `www.americafirstindex.us` was never bound to the App Service; only the apex was.
 
 ## Legacy deployment (recorded 2026-11-26, removed in step 1)
@@ -144,6 +144,21 @@ Zone hosted at GoDaddy. Captured with `dig`; GoDaddy may hold records not visibl
 | `_dmarc` | TXT | `v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:dmarc_rua@onsecureserver.net;` | GoDaddy default; revisit with email setup in step 10 |
 
 No MX, AAAA, CAA, or apex TXT records exist.
+
+### Step 3 custom domain changes (planned 2026-11-26)
+
+`api` was found to have its own `A 20.118.56.16` record (not in the table above; a random subdomain does not
+resolve, so there is no wildcard). The App Service domain verification ID is subscription-wide, so `asuid.api`
+carries the same value as the legacy `asuid` record.
+
+| Action | Name | Type | Value |
+|---|---|---|---|
+| Replace `A 20.118.56.16` | `api` | CNAME | `app-afi-api-prod-7i7bm.azurewebsites.net` |
+| Add | `asuid.api` | TXT | `9EB72E4174ACFD298B24ADF4E4A1EFA1F0368B6C03F626F490CEC707F54B4AE7` |
+| Replace `A 20.118.56.16` | `@` | A | `20.3.34.31` (`stapp-afi-prod` `stableInboundIP`) |
+| Replace `CNAME americafirstindex.us` | `www` | CNAME | `kind-smoke-0c6d3c21e.6.azurestaticapps.net` |
+| Delete | `asuid` | TXT | legacy apex verification |
+| Add (value issued by Azure) | `@` | TXT | SWA apex validation token |
 
 ### Email sender records (added step 2, verified 2026-11-26)
 

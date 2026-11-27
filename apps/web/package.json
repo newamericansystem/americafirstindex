@@ -14,7 +14,8 @@
   "dependencies": {
     "@afi/shared": "*",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.7"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.3",

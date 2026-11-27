@@ -1,0 +1,20 @@
+{
+  "name": "@afi/jobs",
+  "private": true,
+  "version": "0.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc --noEmit && node build.mjs",
+    "start": "func start"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.4",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@afi/db": "^0.0.0",
+    "@azure/functions": "^4.17.1",
+    "drizzle-orm": "^0.45.4"
+  }
+}

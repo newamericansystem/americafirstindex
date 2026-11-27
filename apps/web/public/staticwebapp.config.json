@@ -1,0 +1,19 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "/*.{json,csv,png,jpg,jpeg,webp,svg,ico,txt,xml}"]
+  },
+  "routes": [
+    { "route": "/assets/*", "headers": { "cache-control": "public, max-age=31536000, immutable" } },
+    { "route": "/geo.json", "headers": { "cache-control": "public, max-age=604800" } },
+    { "route": "/index.html", "headers": { "cache-control": "no-cache" } }
+  ],
+  "globalHeaders": {
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "x-frame-options": "DENY",
+    "permissions-policy": "geolocation=(), camera=(), microphone=()",
+    "content-security-policy-report-only": "default-src 'self'; img-src 'self' data: https://*.blob.core.windows.net https://www.congress.gov; connect-src 'self' https://api.americafirstindex.us https://*.azurewebsites.net https://api.congress.gov https://login.microsoftonline.com; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+  },
+  "mimeTypes": { ".json": "application/json", ".geojson": "application/json" }
+}

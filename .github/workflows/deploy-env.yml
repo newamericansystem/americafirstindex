@@ -1,0 +1,117 @@
+name: Deploy environment
+
+# Called by deploy.yml once per environment. Prod approval comes from the `prod` GitHub Environment's
+# required reviewer.
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      AZURE_RG: ${{ vars.AZURE_RG }}
+      FIREWALL_RULE: gh-deploy-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: api, path: artifacts/api }
+      - uses: actions/download-artifact@v4
+        with: { name: jobs, path: artifacts/jobs }
+      - uses: actions/download-artifact@v4
+        with: { name: 'web-${{ inputs.environment }}', path: artifacts/web }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve resource names
+        run: |
+          set -euo pipefail
+          {
+            echo "PG_SERVER=$(az postgres flexible-server list -g "$AZURE_RG" --query '[0].name' -o tsv)"
+            echo "KEY_VAULT=$(az keyvault list -g "$AZURE_RG" --query '[0].name' -o tsv)"
+            echo "API_APP=$(az webapp list -g "$AZURE_RG" --query "[?starts_with(name, 'app-afi-api-')].name | [0]" -o tsv)"
+            echo "API_HOST=$(az webapp list -g "$AZURE_RG" --query "[?starts_with(name, 'app-afi-api-')].defaultHostName | [0]" -o tsv)"
+            echo "FUNC_APP=$(az functionapp list -g "$AZURE_RG" --query '[0].name' -o tsv)"
+            echo "SWA_NAME=stapp-afi-${{ inputs.environment }}"
+          } | tee -a "$GITHUB_ENV"
+
+      - name: Open Postgres firewall for this runner
+        run: |
+          set -euo pipefail
+          IP=$(curl -fsS https://api.ipify.org)
+          az postgres flexible-server firewall-rule create -g "$AZURE_RG" --name "$PG_SERVER" \
+            --rule-name "$FIREWALL_RULE" --start-ip-address "$IP" --end-ip-address "$IP" -o none
+
+      - name: Migrate database
+        working-directory: artifacts/api
+        run: |
+          set -euo pipefail
+          DATABASE_URL=$(az keyvault secret show --vault-name "$KEY_VAULT" -n database-url --query value -o tsv)
+          echo "::add-mask::$DATABASE_URL"
+          DATABASE_URL="$DATABASE_URL" node dist/migrate.js
+
+      - name: Close Postgres firewall
+        if: always()
+        run: |
+          if [ -n "${PG_SERVER:-}" ]; then
+            az postgres flexible-server firewall-rule delete -g "$AZURE_RG" --name "$PG_SERVER" \
+              --rule-name "$FIREWALL_RULE" --yes -o none || true
+          fi
+
+      - name: Deploy API
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.API_APP }}
+          package: artifacts/api
+
+      - name: Wait for API health
+        run: |
+          for i in $(seq 1 36); do
+            BODY=$(curl -fsS "https://$API_HOST/v1/health" 2>/dev/null || true)
+            if [ "$(echo "$BODY" | jq -r '.version // empty' 2>/dev/null)" = "$GITHUB_SHA" ]; then
+              echo "healthy: $BODY"; exit 0
+            fi
+            echo "waiting for $GITHUB_SHA (attempt $i): ${BODY:-no response}"
+            sleep 5
+          done
+          echo "::error::API did not report version $GITHUB_SHA within 3 minutes"
+          exit 1
+
+      - name: Deploy jobs
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.FUNC_APP }}
+          package: artifacts/jobs
+          remote-build: false
+
+      - name: Get Static Web Apps deploy token
+        run: |
+          set -euo pipefail
+          TOKEN=$(az staticwebapp secrets list -n "$SWA_NAME" -g "$AZURE_RG" --query properties.apiKey -o tsv)
+          echo "::add-mask::$TOKEN"
+          echo "SWA_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+
+      - name: Deploy web
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ env.SWA_TOKEN }}
+          action: upload
+          app_location: artifacts/web
+          output_location: ''
+          skip_app_build: true
+          skip_api_build: true

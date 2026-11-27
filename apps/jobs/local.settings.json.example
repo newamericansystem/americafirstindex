@@ -1,0 +1,9 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "APP_ENV": "local",
+    "DATABASE_URL": "postgresql://afi:afi@localhost:5432/afi"
+  }
+}

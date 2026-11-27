@@ -121,6 +121,10 @@ module api 'modules/appservice-api.bicep' = {
     planSku: apiPlanSku
     keyVaultUri: keyVault.outputs.uri
     publicWebOrigin: publicWebOrigin
+    // PR previews live on arbitrary *.azurestaticapps.net hosts, so only dev accepts the wildcard.
+    allowedOrigins: isProd
+      ? 'https://${staticWebApp.outputs.defaultHostname}'
+      : 'https://*.azurestaticapps.net'
     mailFrom: communication.outputs.senderAddress
     storageAccountName: storage.outputs.name
     mediaBaseUrl: '${storage.outputs.blobEndpoint}media'
