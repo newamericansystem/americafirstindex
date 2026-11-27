@@ -347,13 +347,19 @@ Dev uses default hostnames (`*.azurestaticapps.net`, `*.azurewebsites.net`). Pro
    - Verify `curl https://api.<DOMAIN>/v1/health`.
 2. **Front-end domain**
    - **HUMAN**: replace the records that pointed at the deleted legacy App Service (saved in `values.md` in step 1) with:
-     - `www CNAME → <prod SWA default hostname>`
-     - apex: ALIAS/ANAME (or Azure DNS alias record) → SWA.
+     - `www CNAME → <prod SWA default hostname>` (replaces `www CNAME americafirstindex.us`)
+     - `@ A → <prod SWA stableInboundIP>` (replaces `@ A 20.118.56.16`). Get the IP with
+       `az staticwebapp show -n stapp-afi-prod --query stableInboundIP -o tsv`.
+     - Delete the legacy `asuid` TXT record.
+   - **Decision (step 2):** GoDaddy has no ALIAS/ANAME or CNAME flattening, so the apex uses an `A` record to the SWA's
+     stable inbound IP ([Microsoft guide](https://learn.microsoft.com/en-us/azure/static-web-apps/apex-domain-external)).
+     Apex traffic is served from one regional host instead of SWA's global distribution; acceptable for Phase 1.
+     Moving DNS to Azure DNS (alias record) is the upgrade path if that matters later.
    - Agent: `az staticwebapp hostname set -n stapp-afi-prod --hostname www.<DOMAIN>` (CNAME validation) and for the apex
      `az staticwebapp hostname set -n stapp-afi-prod --hostname <DOMAIN> --validation-method dns-txt-token`; read the token with
-     `az staticwebapp hostname show` and have the human add it as a TXT record.
-   - Decide with the human which host is canonical (apex recommended). In the SWA portal "Custom domains"
-     blade, mark it as the default domain so requests to the other hostnames redirect to it.
+     `az staticwebapp hostname show` and have the human add it as a TXT record at `@`.
+   - The apex is canonical. In the SWA portal "Custom domains" blade, mark it as the default domain so requests to
+     `www` redirect to it.
 
 ## Verification
 
