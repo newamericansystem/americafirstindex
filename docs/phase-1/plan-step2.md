@@ -30,6 +30,9 @@ offline during this step; that is expected — see step 0.)
 | Azure Maps account | Gen2 | Gen2 | Address geocoding |
 | User-assigned managed identity | 1 | 1 | GitHub Actions OIDC deploy identity |
 
+**Decision (step 2):** prod launches on the dev SKUs (`B1` plan, `Standard_B1ms` Postgres) to save
+cost, set in `infra/env/prod.bicepparam` via `apiPlanSku` / `postgresSkuName`. Raise them there when traffic warrants.
+
 Approximate monthly cost at low traffic: dev ≈ $35–50, prod ≈ $70–100 (the App Service
 plan and Postgres dominate). Moving prod to a `P0v3` plan with a staging slot for zero-downtime
 deploys is a later option, not part of Phase 1. Confirm with the Azure pricing calculator and tell the human before deploying prod.

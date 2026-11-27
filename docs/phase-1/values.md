@@ -7,14 +7,60 @@ Names and IDs only. Never put secrets in this file.
 | Placeholder | Value | Source |
 |---|---|---|
 | `<DOMAIN>` | `americafirstindex.us` | Custom domain bound to the legacy App Service (step 1) |
-| `<AZURE_REGION>` | `centralus` (proposed; legacy resources were in Central US) | To confirm before step 2 |
+| `<AZURE_REGION>` | `westus2` | Human (step 2), after quota checks below |
 | `<SUBSCRIPTION_ID>` | `4f38ff76-0933-4cbf-9746-92570fc83a3f` ("Azure subscription 1") | `az account show` (step 1) |
 | `<TENANT_ID>` | `6594b8a2-0781-4a07-85f4-62ab8172d4d6` ("newamericansystem us", `NETORGFT20364170.onmicrosoft.com`) | `az account show` (step 1) |
 | `<GITHUB_REPO>` | `newamericansystem/americafirstindex` | `git remote` |
-| `<ADMIN_EMAILS>` | _TBD_ | Ask before step 2 |
-| `<MAIL_FROM_DOMAIN>` | _TBD_ (recommended `mail.americafirstindex.us`) | Ask before step 2 |
-| `<ORG_POSTAL_ADDRESS>` | _TBD_ | Ask before step 2 |
+| `<ADMIN_EMAILS>` | `president@newamericansystem.us`, `cscusa1776@gmail.com` | Human (step 1). The Gmail account is outside the tenant and must be invited as an Entra B2B guest before it can be assigned the Admin app role |
+| `<MAIL_FROM_DOMAIN>` | `mail.americafirstindex.us` | Human (step 1) |
+| `<ORG_POSTAL_ADDRESS>` | 5900 Balcones Dr. Suite 23684, Austin, TX 78731 US | Human (step 1) |
 | `<DNS_PROVIDER>` | GoDaddy (nameservers `ns29.domaincontrol.com`, `ns30.domaincontrol.com`) | `dig NS`, `whois` (step 1) |
+
+## Environments (step 2)
+
+| Item | dev | prod |
+|---|---|---|
+| Resource group | `rg-afi-dev` | `rg-afi-prod` |
+| GitHub deploy identity | `id-afi-github-dev` | `id-afi-github-prod` |
+| `AZURE_CLIENT_ID` | `f905608e-8d6d-471b-888c-189065eceb9f` | `986e7df9-25ec-49ea-93ea-f79a30c7f4e7` |
+| Federated credential subject | `repo:newamericansystem@252698414/americafirstindex@1249763886:environment:dev` | `repo:newamericansystem@252698414/americafirstindex@1249763886:environment:prod` |
+| GitHub Environment | `dev` (no protection) | `prod` (required reviewer `newamericansystem`, `main` branch only) |
+| App Service plan SKU | B1 | B1 (human chose dev-size SKUs; plan default B2) |
+| Postgres SKU | Standard_B1ms | Standard_B1ms (human chose dev-size SKUs; plan default Standard_B2s) |
+
+### Deployed resources
+
+Resource name suffix: dev `pfhek` (derived from the subscription and resource group IDs, so prod's differs).
+
+| Resource | dev | prod |
+|---|---|---|
+| Key Vault | `kv-afi-dev-pfhek` | _pending_ |
+| Postgres | `psql-afi-dev-pfhek.postgres.database.azure.com` (16.15, PostGIS 3.6.4 verified) | _pending_ |
+| Storage account | `stafidevpfhek` | _pending_ |
+| API web app | `app-afi-api-dev-pfhek` → `app-afi-api-dev-pfhek.azurewebsites.net` | _pending_ |
+| Function app | `func-afi-jobs-dev-pfhek` (Flex, Node 26) | _pending_ |
+| Static Web App | `stapp-afi-dev` → `zealous-ocean-0b965d11e.5.azurestaticapps.net` | _pending_ |
+| Communication Services | `acs-afi-dev` / `ecs-afi-dev` | _pending_ |
+| Sender address | `DoNotReply@40068d8e-2f52-4b0d-b8b7-cd0f59647143.azurecomm.net` | `noreply@mail.americafirstindex.us` |
+| Azure Maps | `maps-afi-dev` | _pending_ |
+| App Insights / Log Analytics | `appi-afi-dev` / `log-afi-dev` | _pending_ |
+
+### Region constraints found in step 2 (pay-as-you-go subscription, 2026-11-26)
+
+Checked with ARM preflight validation, which enforces the real quota (the usages API reports a limit
+of 30 everywhere and is not reliable).
+
+| Region | App Service plans (B1/S1/P0v3) | Postgres Burstable B1ms |
+|---|---|---|
+| `centralus` | Blocked: 1 instance total, used by `nassite`; automatic increase refused (`QuotaNotAvailableForResource`) | Works |
+| `eastus2` | Blocked (limit 0) | Refused at creation (`SkuNotAvailable`) |
+| `eastus` | Blocked | Provisioning restricted |
+| `southcentralus`, `northcentralus` | Blocked | Not tested |
+| `westus2` | Allowed | Works (throwaway server created and deleted) |
+| `westus3`, `westcentralus` | Allowed | Not tested |
+
+To use another region, open a support request with issue type "Service and subscription limits (quotas)".
+`Microsoft.Quota` was registered on the subscription during this investigation.
 
 ## Domain
 
@@ -50,7 +96,8 @@ VNet `vnet-xrojjeld`.
 | Delete Cosmos DB, private endpoint, private DNS zone, VNet | Done 2026-11-26 (approved by human) |
 | App Service plan `ASP-americafirstindex-b0e7` | **Kept** — still hosts `nassite` |
 | Resource group `americafirstindex` | **Kept** — still contains the plan |
-| Delete `AZUREAPPSERVICE_*` GitHub secrets | See "GitHub secrets" below |
+| Delete `AZUREAPPSERVICE_*` GitHub secrets | Done 2026-11-26 (`VITE_CONGRESS_API_KEY` kept until step 4) |
+| Merge step 1 ([PR #1](https://github.com/newamericansystem/americafirstindex/pull/1)) | Done 2026-11-26 |
 
 ## DNS records for `americafirstindex.us` (public lookup, 2026-11-26)
 
