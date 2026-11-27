@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# One-time setup per environment. Run as a subscription Owner (or User Access Administrator + Contributor).
+# One-time setup per environment. Run as a subscription Owner (or User Access Administrator + Contributor),
+# with `gh` signed in.
 # Usage: LOCATION=centralus ./infra/scripts/bootstrap.sh dev|prod
 set -euo pipefail
 ENV="${1:?usage: bootstrap.sh dev|prod}"
@@ -26,8 +27,10 @@ az role assignment create --assignee-object-id "$PRINCIPAL_ID" --assignee-princi
 az role assignment create --assignee-object-id "$PRINCIPAL_ID" --assignee-principal-type ServicePrincipal \
   --role "Role Based Access Control Administrator" --scope "$RG_ID" -o none
 
+# GitHub issues OIDC subjects keyed by immutable owner/repo IDs: repo:{owner}@{ownerId}/{repo}@{repoId}:...
+SUBJECT_REPO=$(gh api "repos/${REPO}" -q '"\(.owner.login)@\(.owner.id)/\(.name)@\(.id)"')
 az identity federated-credential create -g "$RG" --identity-name "$ID_NAME" \
   --name "github-${ENV}" --issuer "https://token.actions.githubusercontent.com" \
-  --subject "repo:${REPO}:environment:${ENV}" --audiences "api://AzureADTokenExchange" -o none
+  --subject "repo:${SUBJECT_REPO}:environment:${ENV}" --audiences "api://AzureADTokenExchange" -o none
 
 echo "AZURE_CLIENT_ID=${CLIENT_ID}"

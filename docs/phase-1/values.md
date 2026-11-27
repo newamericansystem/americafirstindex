@@ -23,7 +23,7 @@ Names and IDs only. Never put secrets in this file.
 | Resource group | `rg-afi-dev` | `rg-afi-prod` |
 | GitHub deploy identity | `id-afi-github-dev` | `id-afi-github-prod` |
 | `AZURE_CLIENT_ID` | `5c57af40-75ce-409c-b5fc-5a812029005e` | `e1610182-e8e4-438d-8d1f-31f6ce51ed22` |
-| Federated credential subject | `repo:newamericansystem/americafirstindex:environment:dev` | `repo:newamericansystem/americafirstindex:environment:prod` |
+| Federated credential subject | `repo:newamericansystem@252698414/americafirstindex@1249763886:environment:dev` | `repo:newamericansystem@252698414/americafirstindex@1249763886:environment:prod` |
 | GitHub Environment | `dev` (no protection) | `prod` (required reviewer `newamericansystem`, `main` branch only) |
 | App Service plan SKU | B1 | B1 (human chose dev-size SKUs; plan default B2) |
 | Postgres SKU | Standard_B1ms | Standard_B1ms (human chose dev-size SKUs; plan default Standard_B2s) |
