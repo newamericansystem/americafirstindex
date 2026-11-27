@@ -100,7 +100,7 @@ If a human asks to change one of these, update this section first, then the affe
 | Observability | Application Insights (workspace-based) + Log Analytics |
 | IaC | Bicep in `infra/`, deployed by GitHub Actions with OIDC federated credentials |
 | Environments | `dev` and `prod`, each in its own resource group |
-| Region | `<AZURE_REGION>` (recommended: `centralus`) |
+| Region | `<AZURE_REGION>` = `westus2`. Changed from `centralus` in step 2: this subscription can only create App Service plans in `westus2`, `westus3`, and `westcentralus`, and `westus2` is the one that also hosts Static Web Apps, Maps, Flex Consumption, and Postgres Burstable |
 
 Why the API is called directly instead of as a SWA linked backend: linked backends put
 App Service Easy Auth in front of the API, which conflicts with our own bearer-token

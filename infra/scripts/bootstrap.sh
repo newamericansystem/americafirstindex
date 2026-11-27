@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-time setup per environment. Run as a subscription Owner (or User Access Administrator + Contributor),
 # with `gh` signed in.
-# Usage: LOCATION=centralus ./infra/scripts/bootstrap.sh dev|prod
+# Usage: LOCATION=westus2 ./infra/scripts/bootstrap.sh dev|prod
 set -euo pipefail
 ENV="${1:?usage: bootstrap.sh dev|prod}"
 LOCATION="${LOCATION:?set LOCATION}"
@@ -22,10 +22,18 @@ PRINCIPAL_ID=$(az identity show -g "$RG" -n "$ID_NAME" --query principalId -o ts
 CLIENT_ID=$(az identity show -g "$RG" -n "$ID_NAME" --query clientId -o tsv)
 RG_ID=$(az group show -n "$RG" --query id -o tsv)
 
-az role assignment create --assignee-object-id "$PRINCIPAL_ID" --assignee-principal-type ServicePrincipal \
-  --role "Contributor" --scope "$RG_ID" -o none
-az role assignment create --assignee-object-id "$PRINCIPAL_ID" --assignee-principal-type ServicePrincipal \
-  --role "Role Based Access Control Administrator" --scope "$RG_ID" -o none
+# A just-created identity can take a minute to replicate in Entra, so role assignments are retried.
+assign_role() {
+  for attempt in 1 2 3 4 5 6; do
+    az role assignment create --assignee-object-id "$PRINCIPAL_ID" --assignee-principal-type ServicePrincipal \
+      --role "$1" --scope "$RG_ID" -o none && return 0
+    echo "role assignment '$1' failed (attempt $attempt); retrying in 20s" >&2
+    sleep 20
+  done
+  return 1
+}
+assign_role "Contributor"
+assign_role "Role Based Access Control Administrator"
 
 # GitHub issues OIDC subjects keyed by immutable owner/repo IDs: repo:{owner}@{ownerId}/{repo}@{repoId}:...
 SUBJECT_REPO=$(gh api "repos/${REPO}" -q '"\(.owner.login)@\(.owner.id)/\(.name)@\(.id)"')

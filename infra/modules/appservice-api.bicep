@@ -23,6 +23,8 @@ resource plan 'Microsoft.Web/serverfarms@2024-11-01' = {
   }
   properties: {
     reserved: true
+    // Lets plan creation succeed when the region is short on capacity; instances are added once available.
+    asyncScalingEnabled: true
   }
 }
 

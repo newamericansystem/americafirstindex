@@ -4,9 +4,6 @@ targetScope = 'resourceGroup'
 param env string
 param location string = resourceGroup().location
 
-@description('Azure Maps is not offered in every region; it only serves geocoding, so region is not latency-sensitive.')
-param mapsLocation string = 'eastus'
-
 @description('Public apex domain, e.g. americafirstindex.us')
 param domain string
 
@@ -107,7 +104,7 @@ module maps 'modules/maps.bicep' = {
   name: 'maps'
   params: {
     env: env
-    location: mapsLocation
+    location: location
     tags: tags
   }
 }
