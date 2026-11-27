@@ -145,6 +145,21 @@ Zone hosted at GoDaddy. Captured with `dig`; GoDaddy may hold records not visibl
 
 No MX, AAAA, CAA, or apex TXT records exist.
 
+### Step 3 custom domain changes (planned 2026-11-26)
+
+`api` was found to have its own `A 20.118.56.16` record (not in the table above; a random subdomain does not
+resolve, so there is no wildcard). The App Service domain verification ID is subscription-wide, so `asuid.api`
+carries the same value as the legacy `asuid` record.
+
+| Action | Name | Type | Value |
+|---|---|---|---|
+| Replace `A 20.118.56.16` | `api` | CNAME | `app-afi-api-prod-7i7bm.azurewebsites.net` |
+| Add | `asuid.api` | TXT | `9EB72E4174ACFD298B24ADF4E4A1EFA1F0368B6C03F626F490CEC707F54B4AE7` |
+| Replace `A 20.118.56.16` | `@` | A | `20.3.34.31` (`stapp-afi-prod` `stableInboundIP`) |
+| Replace `CNAME americafirstindex.us` | `www` | CNAME | `kind-smoke-0c6d3c21e.6.azurestaticapps.net` |
+| Delete | `asuid` | TXT | legacy apex verification |
+| Add (value issued by Azure) | `@` | TXT | SWA apex validation token |
+
 ### Email sender records (added step 2, verified 2026-11-26)
 
 Added at GoDaddy for prod's ACS custom domain; all four show `Verified` on `ecs-afi-prod`.
