@@ -30,20 +30,50 @@ Names and IDs only. Never put secrets in this file.
 
 ### Deployed resources
 
-Resource name suffix: dev `pfhek` (derived from the subscription and resource group IDs, so prod's differs).
+Resource name suffix: dev `pfhek`, prod `7i7bm` (derived from the subscription and resource group IDs).
 
 | Resource | dev | prod |
 |---|---|---|
-| Key Vault | `kv-afi-dev-pfhek` | _pending_ |
-| Postgres | `psql-afi-dev-pfhek.postgres.database.azure.com` (16.15, PostGIS 3.6.4 verified) | _pending_ |
-| Storage account | `stafidevpfhek` | _pending_ |
-| API web app | `app-afi-api-dev-pfhek` → `app-afi-api-dev-pfhek.azurewebsites.net` | _pending_ |
-| Function app | `func-afi-jobs-dev-pfhek` (Flex, Node 26) | _pending_ |
-| Static Web App | `stapp-afi-dev` → `zealous-ocean-0b965d11e.5.azurestaticapps.net` | _pending_ |
-| Communication Services | `acs-afi-dev` / `ecs-afi-dev` | _pending_ |
+| Key Vault | `kv-afi-dev-pfhek` | `kv-afi-prod-7i7bm` |
+| Postgres | `psql-afi-dev-pfhek.postgres.database.azure.com` (16.15, PostGIS 3.6.4 verified) | `psql-afi-prod-7i7bm.postgres.database.azure.com` (16) |
+| Storage account | `stafidevpfhek` | `stafiprod7i7bm` |
+| API web app | `app-afi-api-dev-pfhek` → `app-afi-api-dev-pfhek.azurewebsites.net` | `app-afi-api-prod-7i7bm` → `app-afi-api-prod-7i7bm.azurewebsites.net` |
+| Function app | `func-afi-jobs-dev-pfhek` (Flex, Node 26) | `func-afi-jobs-prod-7i7bm` (Flex, Node 26) |
+| Static Web App | `stapp-afi-dev` → `zealous-ocean-0b965d11e.5.azurestaticapps.net` | `stapp-afi-prod` → `kind-smoke-0c6d3c21e.6.azurestaticapps.net` |
+| Communication Services | `acs-afi-dev` / `ecs-afi-dev` | `acs-afi-prod` / `ecs-afi-prod` (custom domain linked, [PR #3](https://github.com/newamericansystem/americafirstindex/pull/3)) |
 | Sender address | `DoNotReply@40068d8e-2f52-4b0d-b8b7-cd0f59647143.azurecomm.net` | `noreply@mail.americafirstindex.us` |
-| Azure Maps | `maps-afi-dev` | _pending_ |
-| App Insights / Log Analytics | `appi-afi-dev` / `log-afi-dev` | _pending_ |
+| Azure Maps | `maps-afi-dev` | `maps-afi-prod` |
+| App Insights / Log Analytics | `appi-afi-dev` / `log-afi-dev` | `appi-afi-prod` / `log-afi-prod` |
+
+Both environments deployed from `main` via the Infrastructure workflow on 2026-11-26; a second dev
+deploy completed with no changes. `session-secret` exists in both Key Vaults.
+
+### Step 2 status (2026-11-26)
+
+| Acceptance criterion | Status |
+|---|---|
+| `infra.yml` deploys dev and prod from GitHub with OIDC; re-running produces no changes | Done. Dev deployed twice (second run no-op); prod deployed, then redeployed to link the mail domain ([PR #2](https://github.com/newamericansystem/americafirstindex/pull/2), [PR #3](https://github.com/newamericansystem/americafirstindex/pull/3)) |
+| Key Vault secrets `database-url`, `postgres-admin-password`, `azure-maps-key`, `acs-connection-string`, `session-secret` | Done in both envs (first four from `secrets.bicep`; `session-secret` created by the workflow) |
+| API and function apps exist with managed identities and KV references | Done; references resolve once code is deployed in step 3 |
+| PostGIS can be created in `afi` | Done. Dev: `CREATE EXTENSION postgis` verified (3.6.4). Prod: `azure.extensions` allow-lists `POSTGIS,CITEXT,PGCRYPTO`; the step 3 migration creates them |
+| Prod sender domain verified | Done. Domain, SPF, DKIM, DKIM2 all `Verified`; linked to `acs-afi-prod` |
+
+### Before step 3 (human)
+
+| Item | Status |
+|---|---|
+| Install Docker Desktop (local Postgres/Azurite/Mailpit and Testcontainers tests) | Open — not installed |
+| Use Node 24 locally to match `.nvmrc` and Azure (machine has Node 26) | Open |
+| Export the GoDaddy DNS zone as a backup before step 3 changes records | Open |
+| Confirm domain auto-renew (registration expires 2027-01-10) | Open |
+
+### Deferred items
+
+| Item | Why deferred | When to revisit |
+|---|---|---|
+| Raise prod email sending limits (Azure support request) | Microsoft weighs sender reputation and requires delivery failure rates below 2%; `mail.americafirstindex.us` has no sending history yet. Prod runs under default limits meanwhile. Request template: [Quota increase for email domains](https://learn.microsoft.com/en-us/azure/communication-services/concepts/email/email-quota-increase) | After a few weeks of prod email, with observed per-minute/hour/day volume and failure rate |
+| DMARC record for `mail.americafirstindex.us` | The root `_dmarc` record (`p=quarantine`) already applies to the subdomain; the plan's `p=none` record would loosen it and its report address `dmarc@americafirstindex.us` has no mailbox | Step 10, together with a DMARC report mailbox |
+| MX record for `mail.americafirstindex.us` | Optional: ACS only sends, but Microsoft recommends an MX record so mail from the domain is less likely to be marked as spam. Needs an inbox provider to point at | Before sending real volume, or with the email setup in step 10 |
 
 ### Region constraints found in step 2 (pay-as-you-go subscription, 2026-11-26)
 
@@ -114,3 +144,14 @@ Zone hosted at GoDaddy. Captured with `dig`; GoDaddy may hold records not visibl
 | `_dmarc` | TXT | `v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:dmarc_rua@onsecureserver.net;` | GoDaddy default; revisit with email setup in step 10 |
 
 No MX, AAAA, CAA, or apex TXT records exist.
+
+### Email sender records (added step 2, verified 2026-11-26)
+
+Added at GoDaddy for prod's ACS custom domain; all four show `Verified` on `ecs-afi-prod`.
+
+| Name | Type | Value |
+|---|---|---|
+| `mail` | TXT | `ms-domain-verification=3a0e799e-618d-407d-b655-bbdc1c1b7a65` |
+| `mail` | TXT | `v=spf1 include:spf.protection.outlook.com -all` |
+| `selector1-azurecomm-prod-net._domainkey.mail` | CNAME | `selector1-azurecomm-prod-net._domainkey.azurecomm.net` |
+| `selector2-azurecomm-prod-net._domainkey.mail` | CNAME | `selector2-azurecomm-prod-net._domainkey.azurecomm.net` |

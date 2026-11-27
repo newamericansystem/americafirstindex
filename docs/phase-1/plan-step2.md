@@ -86,6 +86,8 @@ echo "AZURE_CLIENT_ID=${CLIENT_ID}"
 - [ ] **HUMAN (prod, start now — it takes days)**: open an Azure support request to raise
       ACS Email sending limits for the prod resource once it exists (default limits are low,
       on the order of tens of emails per minute). Mention expected volume.
+      **Deferred (2026-11-26):** the new domain has no sending history or failure rate to report, so prod runs
+      under default limits until it does. Tracked under "Deferred items" in `values.md`.
 
 ## Part B — Bicep
 
@@ -291,6 +293,8 @@ Create `.github/workflows/infra.yml`:
 - [ ] Prod email domain: read the `verificationRecords` output. **HUMAN**: add the TXT (domain
       ownership + SPF) and CNAME (DKIM, DKIM2) records at `<DNS_PROVIDER>`. Add a DMARC record
       `_dmarc.<MAIL_FROM_DOMAIN>  TXT  "v=DMARC1; p=none; rua=mailto:dmarc@<DOMAIN>"` (tighten to `quarantine` after a month of clean reports).
+      **Skipped (2026-11-26):** the existing `_dmarc.<DOMAIN>` record (`p=quarantine`) already covers the subdomain, and
+      `dmarc@<DOMAIN>` has no mailbox. Revisit with the email pipeline in step 10.
       Then verify each record type:
       `az communication email domain initiate-verification -g rg-afi-prod --email-service-name ecs-afi-prod --domain-name <MAIL_FROM_DOMAIN> --verification-type Domain` (repeat for `SPF`, `DKIM`, `DKIM2`).
 - [ ] Record all resource names and default hostnames for both environments in `values.md`.
