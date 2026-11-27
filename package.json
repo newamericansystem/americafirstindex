@@ -1,13 +1,25 @@
 {
   "name": "americafirstindex",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
-  "engines": { "node": ">=24" },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
+    "dev": "docker compose up -d --wait && npm run db:migrate -w @afi/api && concurrently -n api,web -c cyan,yellow \"npm run dev -w @afi/api\" \"npm run dev -w @afi/web\"",
     "dev:web": "npm run dev -w @afi/web",
     "build:web": "npm run build -w @afi/web",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.4"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.7"
   }
 }

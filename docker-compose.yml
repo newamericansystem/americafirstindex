@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: afi
+      POSTGRES_PASSWORD: afi
+      POSTGRES_DB: afi
+    ports: ["5432:5432"]
+    volumes: [dbdata:/var/lib/postgresql/data]
+    healthcheck:
+      # TCP, not the socket: first-boot init runs a socket-only server that restarts afterwards.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U afi -d afi"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    ports: ["10000:10000", "10001:10001", "10002:10002"]
+  mailpit:
+    image: axllent/mailpit
+    ports: ["8025:8025", "1025:1025"]
+volumes:
+  dbdata:

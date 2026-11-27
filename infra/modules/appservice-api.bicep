@@ -5,6 +5,8 @@ param tags object
 param planSku string
 param keyVaultUri string
 param publicWebOrigin string
+@description('Comma-separated extra CORS origins; may include one leading-wildcard pattern')
+param allowedOrigins string
 param mailFrom string
 param storageAccountName string
 param mediaBaseUrl string
@@ -52,7 +54,7 @@ resource app 'Microsoft.Web/sites@2024-11-01' = {
         { name: 'NODE_ENV', value: 'production' }
         { name: 'APP_ENV', value: env }
         { name: 'PUBLIC_WEB_ORIGIN', value: publicWebOrigin }
-        { name: 'ALLOWED_ORIGINS', value: '${publicWebOrigin},https://*.azurestaticapps.net' }
+        { name: 'ALLOWED_ORIGINS', value: allowedOrigins }
         { name: 'DATABASE_URL', value: kvRef(keyVaultUri, 'database-url') }
         { name: 'SESSION_SECRET', value: kvRef(keyVaultUri, 'session-secret') }
         { name: 'CONGRESS_API_KEY', value: kvRef(keyVaultUri, 'congress-api-key') }

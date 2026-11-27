@@ -1,0 +1,88 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: afi
+          POSTGRES_PASSWORD: afi
+          POSTGRES_DB: afi
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U afi -d afi"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql://afi:afi@localhost:5432/afi
+      GIT_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+
+      - name: Build API and jobs
+        run: |
+          npm run build -w @afi/api
+          npm run build -w @afi/jobs
+
+      # The Congress.gov key is deliberately not passed; member cards fail in deployed envs until step 4.
+      - name: Build web (dev)
+        run: npm run build -w @afi/web -- --outDir dist-dev
+        env:
+          VITE_API_BASE_URL: https://app-afi-api-dev-pfhek.azurewebsites.net
+
+      - name: Build web (prod)
+        run: npm run build -w @afi/web -- --outDir dist-prod
+        env:
+          VITE_API_BASE_URL: https://api.americafirstindex.us
+
+      - name: Stage deploy packages
+        run: |
+          mkdir -p out/api out/jobs
+          cp -R apps/api/dist out/api/dist
+          echo '{ "private": true, "type": "module" }' > out/api/package.json
+          cp -R apps/jobs/dist out/jobs/dist
+          cp apps/jobs/host.json out/jobs/host.json
+          echo '{ "name": "afi-jobs", "private": true, "main": "dist/index.js" }' > out/jobs/package.json
+
+      - uses: actions/upload-artifact@v4
+        with: { name: api, path: out/api, if-no-files-found: error }
+      - uses: actions/upload-artifact@v4
+        with: { name: jobs, path: out/jobs, if-no-files-found: error }
+      - uses: actions/upload-artifact@v4
+        with: { name: web-dev, path: apps/web/dist-dev, if-no-files-found: error }
+      - uses: actions/upload-artifact@v4
+        with: { name: web-prod, path: apps/web/dist-prod, if-no-files-found: error }
+
+  deploy-dev:
+    needs: build
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      environment: dev
+
+  deploy-prod:
+    needs: deploy-dev
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      environment: prod

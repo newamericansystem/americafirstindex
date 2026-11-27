@@ -62,10 +62,10 @@ deploy completed with no changes. `session-secret` exists in both Key Vaults.
 
 | Item | Status |
 |---|---|
-| Install Docker Desktop (local Postgres/Azurite/Mailpit and Testcontainers tests) | Open — not installed |
-| Use Node 24 locally to match `.nvmrc` and Azure (machine has Node 26) | Open |
-| Export the GoDaddy DNS zone as a backup before step 3 changes records | Open |
-| Confirm domain auto-renew (registration expires 2027-01-10) | Open |
+| Install Docker Desktop (local Postgres/Azurite/Mailpit and Testcontainers tests) | Done (Docker Desktop 4.100) |
+| Use Node 24 locally to match `.nvmrc` and Azure (machine has Node 26) | Done (nvm default 24.22.3) |
+| Export the GoDaddy DNS zone as a backup before step 3 changes records | Done 2026-11-26 (kept outside the repo) |
+| Confirm domain auto-renew (registration expires 2027-01-10) | Done (auto-renew on) |
 
 ### Deferred items
 
@@ -94,7 +94,7 @@ To use another region, open a support request with issue type "Service and subsc
 
 ## Domain
 
-- Registrar: GoDaddy.com, LLC. Created 2026-01-10. **Registration expires 2027-01-10** — confirm auto-renew is on.
+- Registrar: GoDaddy.com, LLC. Created 2026-01-10. Registration expires 2027-01-10; auto-renew is on.
 - `www.americafirstindex.us` was never bound to the App Service; only the apex was.
 
 ## Legacy deployment (recorded 2026-11-26, removed in step 1)
