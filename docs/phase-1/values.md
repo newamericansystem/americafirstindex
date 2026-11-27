@@ -16,6 +16,20 @@ Names and IDs only. Never put secrets in this file.
 | `<ORG_POSTAL_ADDRESS>` | 5900 Balcones Dr. Suite 23684, Austin, TX 78731 US | Human (step 1) |
 | `<DNS_PROVIDER>` | GoDaddy (nameservers `ns29.domaincontrol.com`, `ns30.domaincontrol.com`) | `dig NS`, `whois` (step 1) |
 
+## Environments (step 2)
+
+| Item | dev | prod |
+|---|---|---|
+| Resource group | `rg-afi-dev` | `rg-afi-prod` |
+| GitHub deploy identity | `id-afi-github-dev` | `id-afi-github-prod` |
+| `AZURE_CLIENT_ID` | `5c57af40-75ce-409c-b5fc-5a812029005e` | `e1610182-e8e4-438d-8d1f-31f6ce51ed22` |
+| Federated credential subject | `repo:newamericansystem/americafirstindex:environment:dev` | `repo:newamericansystem/americafirstindex:environment:prod` |
+| GitHub Environment | `dev` (no protection) | `prod` (required reviewer `newamericansystem`, `main` branch only) |
+| App Service plan SKU | B1 | B1 (human chose dev-size SKUs; plan default B2) |
+| Postgres SKU | Standard_B1ms | Standard_B1ms (human chose dev-size SKUs; plan default Standard_B2s) |
+
+Azure Maps accounts are in `eastus` (Maps is not offered in `centralus`).
+
 ## Domain
 
 - Registrar: GoDaddy.com, LLC. Created 2026-01-10. **Registration expires 2027-01-10** — confirm auto-renew is on.
